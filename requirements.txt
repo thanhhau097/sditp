@@ -1,0 +1,7 @@
+torch
+torchvision
+transformers
+pandas
+scikit-learn
+cupy-cuda11x
+# pip install cuml-cu11 --extra-index-url=https://pypi.ngc.nvidia.com
