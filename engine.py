@@ -69,20 +69,19 @@ class CustomTrainer(Trainer):
     def compute_loss(self, model: Model, inputs: Dict, return_outputs=False):
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        outputs = model(
-            inputs["topic_inputs"], inputs["content_inputs"], inputs["combined_inputs"]
-        )
+        outputs = model(inputs["images"])
 
+        embs = inputs.get("embs")
         labels = inputs.get("labels")
         if model.objective == "cosine":
             loss_fct = CosineEmbeddingLoss()
             labels = (labels * 2) - 1
-            loss = loss_fct(outputs.view(-1), labels.float())
-        elif model.objective == "siamese":
+            loss = loss_fct(outputs, embs, labels.float())
+        elif model.objective == "contrastive":
             loss_fct = OnlineContrastiveLoss()
-            loss = loss_fct(outputs, labels.float())
+            loss = loss_fct([outputs, embs], labels.float())
         else:
-            raise ValueError("objective should be classification/siamese/both")
+            raise ValueError("objective should be cosine/contrastive")
 
         if return_outputs:
             return (loss, outputs)
@@ -149,15 +148,18 @@ class CustomTrainer(Trainer):
         # del inputs["combined_inputs"]
 
         gc.collect()
-        return loss, outputs, inputs["labels"]
+        return loss, outputs, inputs["embs"]
 
 
 def compute_metrics(eval_preds):
-    try:
-        predictions = torch.sigmoid(torch.from_numpy(eval_preds.predictions)).numpy()
-        auc = roc_auc_score(eval_preds.label_ids, predictions)
-        accuracy = accuracy_score(eval_preds.label_ids, predictions > 0.5)
-        f1 = f1_score(eval_preds.label_ids, predictions > 0.5)
-        return {"AUC": auc, "acc": accuracy, "f1": f1}
-    except:
-        return {"f1": 0}
+    # calculate cosine similarity between embeddings of predicted and actual labels
+    predictions = eval_preds.predictions
+    labels = eval_preds.label_ids
+    predictions = np.array(predictions)
+    labels = np.array(labels)
+    consine_sim = np.dot(predictions, labels.T)
+    consine_sim = consine_sim / np.linalg.norm(predictions, axis=1)[:, None]
+    consine_sim = consine_sim / np.linalg.norm(labels, axis=1)[None, :]
+    consine_sim = np.diag(consine_sim)
+    consine_sim = np.mean(consine_sim)
+    return {"score": consine_sim}

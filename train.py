@@ -11,11 +11,10 @@ from transformers import HfArgumentParser, TrainingArguments, set_seed
 from transformers.trainer_utils import get_last_checkpoint, is_main_process
 
 from data_args import DataArguments
-from dataset import DatasetUpdateCallback, SDITPDataset, collate_fn, init_tokenizer
+from dataset import DatasetUpdateCallback, SDITPDataset, collate_fn
 from engine import CustomTrainer, compute_metrics
 from model import Model
 from model_args import ModelArguments
-from utils import get_processed_text_dict
 
 
 torch.set_float32_matmul_precision("high")
@@ -65,6 +64,9 @@ def main():
     set_seed(training_args.seed)
     fold = data_args.fold
 
+    # Load data
+    print("Reading pairs data...")
+    pairs_df = pd.read_csv(data_args.pairs_path)
     print("Reading prompt data...")
     prompt_df = pd.read_csv(data_args.prompt_path)
     print("Reading image data...")
@@ -72,24 +74,29 @@ def main():
     print("Reading correlation data...")
     correlation_df = pd.read_csv(data_args.correlation_path)
 
-    # split train and val prompt from correlation_df
-    train_prompt_ids = correlation_df[correlation_df["fold"] != fold]["prompt_id"].unique()
-    val_prompt_ids = correlation_df[correlation_df["fold"] == fold]["prompt_id"].unique()
+    # split train and val pairs_df from correlation_df, we get prompt_id of fold from correlation_df and mapping to pairs_df
+    print("Splitting train and val pairs...")
+    train_pairs_df = pairs_df[
+        pairs_df.prompt_id.isin(correlation_df[correlation_df.fold != fold].prompt_id)
+    ]
+    val_pairs_df = pairs_df[
+        pairs_df.prompt_id.isin(correlation_df[correlation_df.fold == fold].prompt_id)
+    ]
 
     train_dataset = SDITPDataset(
+        pairs_df=train_pairs_df,
         prompt_df=prompt_df,
         image_df=image_df,
         correlation_df=correlation_df,
         image_folder=data_args.image_folder,
-        prompt_ids=train_prompt_ids,
     )
 
     val_dataset = SDITPDataset(
+        pairs_df=val_pairs_df,
         prompt_df=prompt_df,
         image_df=image_df,
         correlation_df=correlation_df,
         image_folder=data_args.image_folder,
-        prompt_ids=val_prompt_ids,
     )
 
     # Initialize trainer
@@ -152,6 +159,7 @@ def main():
         trainer.log_metrics("train", metrics)
         trainer.save_metrics("train", metrics)
         trainer.save_state()
+
 
 if __name__ == "__main__":
     main()

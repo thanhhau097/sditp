@@ -1,3 +1,4 @@
+import ast
 from collections import defaultdict
 import gc
 import os
@@ -24,9 +25,8 @@ class SDITPDataset(Dataset):
         image_df,
         correlation_df,
         image_folder,
-        prompt_ids,
         size=(512, 512),
-        objective="cosine", # cosine or constrative
+        objective="cosine",  # cosine or constrative
     ):
         self.pairs_df = pairs_df
         self.prompt_df = prompt_df
@@ -35,20 +35,25 @@ class SDITPDataset(Dataset):
         self.correlation_df = correlation_df
         self.size = size
         self.objective = objective
-        self.prompt_ids = prompt_ids
 
-        self.prompt_id_to_emb_dict = dict(zip(list(self.prompt_df.id.values), list(self.prompt_df.emb.values)))
+        self.image_id_to_path_dict = dict(
+            zip(list(self.image_df.id.values), list(self.image_df.path.values))
+        )
+        self.prompt_id_to_emb_dict = dict(
+            zip(list(self.prompt_df.id.values), list(self.prompt_df.emb.values))
+        )
 
         self.image_paths, self.prompt_embs, self.labels = self.preprocess_df()
 
     def preprocess_df(self):
-        image_names = list(self.pairs_df.image.values)
-        image_paths = [os.path.join(self.image_folder, name) for name in image_names]
+        # get image path from self.image_id_to_path_dict and pairs
+        image_ids = list(self.pairs_df.image_id.values)
+        image_paths = [self.image_id_to_path_dict[id] for id in image_ids]
+        image_paths = [os.path.join(self.image_folder, name) for name in image_paths]
         labels = list(self.pairs_df.target.values)
 
         prompt_ids = self.pairs_df.prompt_id
         embs = [self.prompt_id_to_emb_dict[id] for id in prompt_ids]
-
         return image_paths, embs, labels
 
     def __len__(self):
@@ -58,11 +63,22 @@ class SDITPDataset(Dataset):
         image_path = self.image_paths[idx]
         image = cv2.imread(image_path)
         image = cv2.resize(image, self.size)
-        
+        image = image.transpose(2, 0, 1)
+
         emb = self.prompt_embs[idx]
+        emb = ast.literal_eval(
+            emb.replace("[ ", "[")
+            .replace("  ", ",")
+            .replace(" ", ",")
+            .replace("\n", "")
+        )
 
         label = self.labels[idx]
-        return image, emb, label
+        return (
+            torch.tensor(image).float(),
+            torch.tensor(emb).float(),
+            torch.tensor(int(label)).float(),
+        )
 
 
 def collate_fn(batch):
@@ -70,11 +86,7 @@ def collate_fn(batch):
     images = torch.stack(images)
     embs = torch.stack(embs)
     labels = torch.stack(labels)
-    return {
-        "images": images,
-        "embs": embs,
-        "labels": labels
-    }
+    return {"images": images, "embs": embs, "labels": labels}
 
 
 class InferenceDataset(Dataset):
@@ -101,6 +113,7 @@ class DatasetUpdateCallback(TrainerCallback):
     1. Calculate top-k max positive score, compare to current val best, if greater, continue to step 2, else do nothing
     2. Update supervised_df and update dataset
     """
+
     def __init__(
         self,
         trainer,
@@ -109,7 +122,7 @@ class DatasetUpdateCallback(TrainerCallback):
         prompt_df,
         image_df,
         image_folder,
-        correlation_df
+        correlation_df,
     ):
         self.trainer = trainer
         self.train_prompt_ids = train_prompt_ids
