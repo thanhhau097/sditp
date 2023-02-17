@@ -1,5 +1,11 @@
 # README
 
+## NEPTUNE
+```
+export NEPTUNE_PROJECT="thanhhau097/sditp"
+export NEPTUNE_API_TOKEN="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJlMTRjM2ExOC1lYTA5LTQwODctODMxNi1jZjEzMjdlMjkxYTgifQ=="
+```
+
 Some instructions:
 1. Prompts for this challenge were generated using a variety of (non disclosed) methods, and range from fairly simple to fairly complex with multiple objects and modifiers. Images were generated from the prompts using Stable Diffusion 2.0 (768-v-ema.ckpt) and were generated with 50 steps at 768x768 px and then downsized to 512x512 for the competition dataset. (This script was used, with the majority of default parameters unchanged.) References: 
     - model: https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt
@@ -10,7 +16,7 @@ Some instructions:
 
 ## Scripts
 ```
-CUDA_VISIBLE_DEVICES=0 python train.py --evaluation_strategy epoch --save_strategy epoch --save_total_limit 5 --logging_strategy steps --logging_steps 20 --fp16 --warmup_ratio 0.01 --lr_scheduler_type cosine --adam_eps 1e-6 --optim adamw_torch --do_train --do_eval --metric_for_best_model eval_loss --model_name resnet50 --fold 0 --dataloader_num_workers 12 --learning_rate 8e-5  --num_train_epochs 20 --per_device_train_batch_size 32 --per_device_eval_batch_size 32 --remove_unused_columns False --overwrite_output_dir --load_best_model_at_end --objective cosine --output_dir ./outputs/
+CUDA_VISIBLE_DEVICES=1 python train.py --evaluation_strategy epoch --save_strategy epoch --save_total_limit 5 --logging_strategy steps --logging_steps 50 --fp16 --warmup_ratio 0.01 --lr_scheduler_type cosine --adam_eps 1e-6 --optim adamw_torch --do_train --do_eval --metric_for_best_model eval_loss --model_name resnet50 --fold 0 --dataloader_num_workers 32 --learning_rate 1e-4 --num_train_epochs 20 --per_device_train_batch_size 64 --per_device_eval_batch_size 64 --remove_unused_columns False --overwrite_output_dir --load_best_model_at_end --objective cosine --output_dir ./outputs/ --report_to none
 ```
 
 ## TODO

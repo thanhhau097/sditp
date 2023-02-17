@@ -63,7 +63,7 @@ class SDITPDataset(Dataset):
         image_path = self.image_paths[idx]
         image = cv2.imread(image_path)
         image = cv2.resize(image, self.size)
-        image = image.transpose(2, 0, 1)
+        image = image.transpose(2, 0, 1) / 255
 
         emb = self.prompt_embs[idx]
         emb = ast.literal_eval(
@@ -100,6 +100,7 @@ class InferenceDataset(Dataset):
     def __getitem__(self, idx):
         image = cv2.imread(self.image_paths[idx])
         image = cv2.resize(image, self.size)
+        image = image.transpose(2, 0, 1) / 255
         return image
 
 
