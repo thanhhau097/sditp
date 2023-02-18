@@ -24,6 +24,7 @@ CUDA_VISIBLE_DEVICES=1 python train.py --evaluation_strategy epoch --save_strate
 - [ ] Generate images from original model, using text from public dataset
 - [ ] Generate embeddings from those texts and create mapping image-text-emb: https://www.kaggle.com/code/inversion/calculating-stable-diffusion-prompt-embeddings
 - [ ] Train image to embedding models
+- [ ] Use mean and std: OPENAI_CLIP_MEAN
 
 ## IDEA:
 - [ ] Generate to text then compare two texts as in LECR
