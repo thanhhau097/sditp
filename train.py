@@ -83,6 +83,9 @@ def main():
         pairs_df.prompt_id.isin(correlation_df[correlation_df.fold == fold].prompt_id)
     ]
 
+    train_prompt_ids = train_pairs_df.prompt_id.unique()
+    val_prompt_ids = val_pairs_df.prompt_id.unique()
+
     train_dataset = SDITPDataset(
         pairs_df=train_pairs_df,
         prompt_df=prompt_df,
@@ -131,24 +134,19 @@ def main():
         compute_metrics=compute_metrics,
     )
 
-    # if model_args.objective == "siamese":
-    #     callback = DatasetUpdateCallback(
-    #         trainer=trainer,
-    #         train_topic_ids=train_topic_ids,
-    #         val_topic_ids=val_topic_ids,
-    #         topic_df=topic_df,
-    #         content_df=content_df,
-    #         topic_dict=topic_dict,
-    #         content_dict=content_dict,
-    #         correlation_df=correlation_df,
-    #         tokenizer_name=model_args.tokenizer_name,
-    #         max_len=data_args.max_len,
-    #         best_score=0,
-    #         top_k=data_args.top_k_neighbors,
-    #         use_translated=data_args.use_translated,
-    #         mix_translated=data_args.mix_translated,
-    #     )
-    #     trainer.add_callback(callback)
+    if model_args.objective == "contrastive":
+        callback = DatasetUpdateCallback(
+            trainer=trainer,
+            train_prompt_ids=train_prompt_ids,
+            val_prompt_ids=val_prompt_ids,
+            prompt_df=prompt_df,
+            image_df=image_df,
+            image_folder=data_args.image_folder,
+            correlation_df=correlation_df,
+            best_score=0,
+            top_k=data_args.top_k_neighbors,
+        )
+        trainer.add_callback(callback)
 
     # Training
     if training_args.do_train:
