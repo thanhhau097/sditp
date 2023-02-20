@@ -27,6 +27,7 @@ class SDITPDataset(Dataset):
         image_folder,
         size=(512, 512),
         objective="cosine",  # cosine or constrative
+        is_train=True,
     ):
         self.pairs_df = pairs_df
         self.prompt_df = prompt_df
@@ -35,6 +36,7 @@ class SDITPDataset(Dataset):
         self.correlation_df = correlation_df
         self.size = size
         self.objective = objective
+        self.is_train = is_train
 
         self.image_id_to_path_dict = dict(
             zip(list(self.image_df.id.values), list(self.image_df.path.values))
@@ -54,10 +56,17 @@ class SDITPDataset(Dataset):
 
         prompt_ids = self.pairs_df.prompt_id
         embs = [self.prompt_id_to_emb_dict[id] for id in prompt_ids]
+
+        if not self.is_train or self.objective == "cosine": # self.objective == "cosine" and 
+            # only get positive labels
+            image_paths = [image_paths[i] for i, label in enumerate(labels) if label == 1]
+            embs = [embs[i] for i, label in enumerate(labels) if label == 1]
+            labels = [label for label in labels if label == 1]
+
         return image_paths, embs, labels
 
     def __len__(self):
-        return len(self.pairs_df)
+        return len(self.labels)
 
     def __getitem__(self, idx):
         image_path = self.image_paths[idx]
@@ -66,12 +75,15 @@ class SDITPDataset(Dataset):
         image = image.transpose(2, 0, 1) / 255
 
         emb = self.prompt_embs[idx]
-        emb = ast.literal_eval(
-            emb.replace("[ ", "[")
-            .replace("  ", ",")
-            .replace(" ", ",")
-            .replace("\n", "")
-        )
+        try:
+            emb = ast.literal_eval(emb)
+        except:
+            emb = ast.literal_eval(
+                emb.replace("[ ", "[")
+                .replace("  ", ",")
+                .replace(" ", ",")
+                .replace("\n", "")
+            )
 
         label = self.labels[idx]
         return (
@@ -148,14 +160,20 @@ class DatasetUpdateCallback(TrainerCallback):
             for x in tqdm(self.prompt_df[self.prompt_df.id.isin(self.train_prompt_ids)].emb.values)
         ]
 
+        def convert_emb(emb):
+            try:
+                emb = ast.literal_eval(emb)
+            except:
+                emb = ast.literal_eval(
+                    emb.replace("[ ", "[")
+                    .replace("  ", ",")
+                    .replace(" ", ",")
+                    .replace("\n", "")
+                )
+            return emb
+
         self.val_prompt_embs = [
-            ast.literal_eval(
-                x.replace("[ ", "[")
-                .replace("  ", ",")
-                .replace(" ", ",")
-                .replace("\n", "")
-            )
-            for x in tqdm(self.prompt_df[self.prompt_df.id.isin(self.val_prompt_ids)].emb.values)
+            convert_emb(x) for x in tqdm(self.prompt_df[self.prompt_df.id.isin(self.val_prompt_ids)].emb.values)
         ]
 
         # create dataloader to calculate embedding for images

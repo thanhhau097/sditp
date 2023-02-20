@@ -41,7 +41,7 @@ class OnlineContrastiveLoss(nn.Module):
     """
 
     def __init__(
-        self, distance_metric=SiameseDistanceMetric.COSINE_DISTANCE, margin: float = 0.5
+        self, distance_metric=SiameseDistanceMetric.COSINE_DISTANCE, margin: float = 0.2
     ):
         super(OnlineContrastiveLoss, self).__init__()
         self.margin = margin

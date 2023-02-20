@@ -92,6 +92,7 @@ def main():
         image_df=image_df,
         correlation_df=correlation_df,
         image_folder=data_args.image_folder,
+        is_train=True,
     )
 
     val_dataset = SDITPDataset(
@@ -100,6 +101,7 @@ def main():
         image_df=image_df,
         correlation_df=correlation_df,
         image_folder=data_args.image_folder,
+        is_train=False,
     )
 
     # Initialize trainer

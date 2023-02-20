@@ -25,7 +25,7 @@ class DataArguments:
     )
     fold: int = field(default=0, metadata={"help": "fold for validation"})
     top_k_neighbors: int = field(
-        default=50,
+        default=10,
         metadata={
             "help": "select top_k nearest neighbors for training and valiation set"
         },
