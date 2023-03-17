@@ -4,7 +4,6 @@ import gc
 import os
 
 import cupy as cp
-from cuml.metrics import pairwise_distances
 from cuml.neighbors import NearestNeighbors
 import cv2
 import pandas as pd
@@ -197,7 +196,7 @@ class DatasetUpdateCallback(TrainerCallback):
         print("Calculating new image embeddings")
         self.trainer.model.eval()
         image_embs = []
-        for batch in self.inference_dataloader:
+        for batch in tqdm(self.inference_dataloader):
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             batch = batch.to(device)
             image_embs.extend(

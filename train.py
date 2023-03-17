@@ -13,7 +13,7 @@ from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from data_args import DataArguments
 from dataset import DatasetUpdateCallback, SDITPDataset, collate_fn
 from engine import CustomTrainer, compute_metrics
-from model import Model
+from model import SDModel, TimmModel
 from model_args import ModelArguments
 
 
@@ -106,10 +106,18 @@ def main():
 
     # Initialize trainer
     print("Initializing model...")
-    model = Model(
-        model_name=model_args.model_name,
-        objective=model_args.objective,
-    )
+    if model_args.model_type == "timm":
+        model = TimmModel(
+            model_name=model_args.model_name,
+            objective=model_args.objective,
+        )
+    else:
+        model = SDModel(
+            weights_path="./data/autoencoder_module.pth",
+            objective=model_args.objective,
+            freeze_backbone=False,
+        )
+
     if last_checkpoint is None and model_args.resume is not None:
         logger.info(f"Loading {model_args.resume} ...")
         checkpoint = torch.load(model_args.resume, "cpu")
