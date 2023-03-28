@@ -54,7 +54,7 @@ def generate(args):
             image = model(prompt).images[0]
             # save image to image_folder
             image_path = os.path.join(
-                image_folder, f"{str(idx).zfill(8)}_{str(i).zfill(2)}.png"
+                image_folder, f"{str(idx).zfill(8)}_{str(i).zfill(2)}.jpg"
             )
             image.save(image_path)
             image_paths.append(image_path)
