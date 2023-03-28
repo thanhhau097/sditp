@@ -6,8 +6,8 @@ import subprocess
 
 
 def run_generate_data(i, sentence_transformers_weights_path):
-    num_images_per_process = 5000
-    num_images_per_prompt = 4
+    num_images_per_process = 250000
+    num_images_per_prompt = 1
     subprocess.run(
         f"CUDA_VISIBLE_DEVICES={i} python generate_data.py --start {i * num_images_per_process} --end {(i + 1) * num_images_per_process} --n_images_per_prompt {num_images_per_prompt} --sentence_transformers_weights_path {sentence_transformers_weights_path}",
         shell=True,
