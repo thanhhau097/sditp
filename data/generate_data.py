@@ -4,6 +4,7 @@ import uuid
 
 from sentence_transformers import SentenceTransformer, models
 from diffusers import StableDiffusionPipeline
+from diffusers import DPMSolverMultistepScheduler                                                                                                                                                                                             
 import torch
 from huggingface_hub import login
 import pandas as pd
@@ -21,7 +22,7 @@ def generate(args):
 
     # Download the parquet table
     print("Downloading metadata.parquet...")
-    table_url = f"https://huggingface.co/datasets/poloclub/diffusiondb/resolve/main/metadata.parquet"
+    table_url = f"https://huggingface.co/datasets/poloclub/diffusiondb/resolve/main/metadata-large.parquet"
     urlretrieve(table_url, "metadata.parquet")
     metadata_df = pd.read_parquet("metadata.parquet")
 
@@ -35,7 +36,7 @@ def generate(args):
 
     class CFG:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        seed = 42
+        seed = 43
         generator = torch.Generator(device).manual_seed(seed)
         model_id = "stabilityai/stable-diffusion-2"
 
@@ -44,18 +45,21 @@ def generate(args):
     model_pipe = StableDiffusionPipeline.from_pretrained(
         cfg.model_id, torch_dtype=torch.float16, revision="fp16", use_auth_token=True
     )
-    model_pipe = model_pipe.to(cfg.device)
+    model_pipe = model_pipe.to(cfg.device)                                                                                                                                                                                                                                              
+    model_pipe.scheduler = DPMSolverMultistepScheduler.from_config(model_pipe.scheduler.config)                                                                                                                                                               
 
     def generate_image(
         prompt, idx, model, n_images=1, image_folder=args.save_image_dir
     ):
         image_paths = []
         for i in range(n_images):
-            image = model(prompt).images[0]
-            # save image to image_folder
             image_path = os.path.join(
                 image_folder, f"{str(idx).zfill(8)}_{str(i).zfill(2)}.jpg"
             )
+            if os.path.exists(image_path):
+                continue
+            image = model(prompt, num_inference_steps=20).images[0]
+            # save image to image_folder
             image.save(image_path)
             image_paths.append(image_path)
 
@@ -164,5 +168,6 @@ if __name__ == "__main__":
     generate(args)
 
     # download sentence transformers weights here: https://www.kaggle.com/datasets/inversion/sentence-transformers-222
+    # kaggle datasets download -d inversion/sentence-transformers-222
     # sample usage
-    # python generate_data.py --save_dir ./generated_data --start 0 --end 3000 --n_images_per_prompt 4 --sentence_transformers_weights_path /home/thanh/shared_disk/thanh/sditp/data/all-MiniLM-L6-v2
+    # python generate_data.py --save_dir ./generated_data --start 0 --end 3000 --n_images_per_prompt 1 --sentence_transformers_weights_path /home/thanh/sditp/data/all-MiniLM-L6-v2
