@@ -22,7 +22,7 @@ def generate(args):
 
     # Download the parquet table
     print("Downloading metadata.parquet...")
-    table_url = f"https://huggingface.co/datasets/poloclub/diffusiondb/resolve/main/metadata.parquet"
+    table_url = f"https://huggingface.co/datasets/poloclub/diffusiondb/resolve/main/metadata-large.parquet"
     urlretrieve(table_url, "metadata.parquet")
     metadata_df = pd.read_parquet("metadata.parquet")
 
