@@ -56,11 +56,10 @@ def generate(args):
             image_path = os.path.join(
                 image_folder, f"{str(idx).zfill(8)}_{str(i).zfill(2)}.jpg"
             )
-            if os.path.exists(image_path):
-                continue
-            image = model(prompt, num_inference_steps=20).images[0]
-            # save image to image_folder
-            image.save(image_path)
+            if not os.path.exists(image_path):
+                image = model(prompt, num_inference_steps=20).images[0]
+                # save image to image_folder
+                image.save(image_path)
             image_paths.append(image_path)
 
         return image_paths
