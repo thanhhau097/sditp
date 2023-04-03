@@ -12,6 +12,7 @@ from sklearn.model_selection import KFold
 from urllib.request import urlretrieve
 import pandas as pd
 from tqdm import tqdm
+import numpy as np
 
 
 # login()
@@ -64,9 +65,10 @@ def generate(args):
 
         return image_paths
 
+    print("Generating images")
     generated_image_paths = []
     images_idx = []
-    for i, prompt in enumerate(prompts):
+    for i, prompt in tqdm(enumerate(prompts)):
         idx = i + args.start
         generated_image_paths.append(
             generate_image(prompt, idx, model_pipe, args.n_images_per_prompt)
@@ -78,7 +80,8 @@ def generate(args):
     image_paths = []
     all_prompt_images = []
 
-    for prompt, images in zip(prompts, generated_image_paths):
+    print("Generating csv files")
+    for prompt, images in tqdm(zip(prompts, generated_image_paths)):
         prompt_id = str(uuid.uuid4())
         prompt_ids.append(prompt_id)
 
@@ -108,36 +111,45 @@ def generate(args):
         correlation_df.loc[val_idx, "fold"] = fold
 
     # write to csv
+    print("Writing to csv files")
+    print("writing prompt.csv")
     prompt_df.to_csv(
         os.path.join(args.save_dir, f"prompt_{args.start}.csv"), index=False
     )
+
+    print("writing image.csv")
     image_df.to_csv(os.path.join(args.save_dir, f"image_{args.start}.csv"), index=False)
+
+    print("writing correlation.csv")
     correlation_df.to_csv(
         os.path.join(args.save_dir, f"correlation_{args.start}.csv"), index=False
     )
 
-    pairs = []
-    for prompt_id in correlation_df.prompt_id.unique():
-        prompt_images = (
-            correlation_df[correlation_df.prompt_id == prompt_id]
-            .image_id.values[0]
-            .split(" ")
-        )
-        for image_id in prompt_images:
-            pairs.append((prompt_id, image_id, 1))
+    print("writing pairs.csv")
+    # pairs = []
+    # for prompt_id in tqdm(correlation_df.prompt_id.unique()):
+    #     prompt_images = (
+    #         correlation_df[correlation_df.prompt_id == prompt_id]
+    #         .image_id.values[0]
+    #         .split(" ")
+    #     )
+    #     for image_id in prompt_images:
+    #         pairs.append((prompt_id, image_id, 1))
 
-        # each value is a string, we need to split it to get the list of image_id
-        negative_images = correlation_df[
-            correlation_df.prompt_id != prompt_id
-        ].image_id.values
-        negative_images = [image_id.split(" ") for image_id in negative_images]
-        negative_images = [
-            image_id for image_ids in negative_images for image_id in image_ids
-        ]
+    #     # each value is a string, we need to split it to get the list of image_id
+    #     negative_images = correlation_df[
+    #         correlation_df.prompt_id != prompt_id
+    #     ].image_id.values
+    #     negative_images = [image_id.split(" ") for image_id in negative_images]
+    #     negative_images = [
+    #         image_id for image_ids in negative_images for image_id in image_ids
+    #     ]
 
-        pairs.extend(
-            [(prompt_id, random.choice(negative_images), 0) for _ in range(10)]
-        )
+    #     pairs.extend(
+    #         [(prompt_id, random.choice(negative_images), 0) for _ in range(10)]
+    #     )
+
+    pairs = [(prompt_id, image_id, 1) for prompt_id, image_id in zip(prompt_ids, image_ids)]
 
     pairs_df = pd.DataFrame(pairs, columns=["prompt_id", "image_id", "target"])
     pairs_df.to_csv(os.path.join(args.save_dir, f"pairs_{args.start}.csv"), index=False)
@@ -151,7 +163,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sentence_transformers_weights_path",
         type=str,
-        default="/home/thanh/shared_disk/thanh/sditp/data/all-MiniLM-L6-v2",
+        default="/home/thanh/sditp/data/all-MiniLM-L6-v2",
     )
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--end", type=int, default=10)
