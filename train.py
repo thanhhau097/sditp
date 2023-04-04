@@ -66,13 +66,18 @@ def main():
 
     # Load data
     print("Reading pairs data...")
-    pairs_df = pd.read_csv(data_args.pairs_path)
+    pairs_df = pd.concat([pd.read_csv(f"{data_args.pairs_path[:-4]}_{i}.csv") for i in range(0, 2000000, 250000)])
+    # pairs_df = pd.read_csv(data_args.pairs_path)
     print("Reading prompt data...")
-    prompt_df = pd.read_csv(data_args.prompt_path)
+    # prompt_df = pd.read_csv(data_args.prompt_path)
+    prompt_df = pd.concat([pd.read_csv(f"{data_args.prompt_path[:-4]}_{i}.csv") for i in range(0, 2000000, 250000)])
     print("Reading image data...")
-    image_df = pd.read_csv(data_args.image_path)
+    # image_df = pd.read_csv(data_args.image_path)
+    image_df = pd.concat([pd.read_csv(f"{data_args.image_path[:-4]}_{i}.csv") for i in range(0, 2000000, 250000)])
     print("Reading correlation data...")
-    correlation_df = pd.read_csv(data_args.correlation_path)
+    # correlation_df = pd.read_csv(data_args.correlation_path)
+    correlation_df = pd.concat([pd.read_csv(f"{data_args.correlation_path[:-4]}_{i}.csv") for i in range(0, 2000000, 250000)])
+
 
     # split train and val pairs_df from correlation_df, we get prompt_id of fold from correlation_df and mapping to pairs_df
     print("Splitting train and val pairs...")

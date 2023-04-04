@@ -145,14 +145,18 @@ class CustomTrainer(Trainer):
 
         embs = inputs.get("embs")
         labels = inputs.get("labels")
-        if model.objective == "cosine":
+        # try:
+        objective = model.module.objective
+        # except:
+        #     objective = model.objective
+        if objective == "cosine":
             loss_fct = CosineEmbeddingLoss()
             labels = (labels * 2) - 1
             loss = loss_fct(outputs, embs, labels.float())
-        elif model.objective == "mnrl":
+        elif objective == "mnrl":
             loss_fct = MultipleNegativesRankingLoss(scale=50)
             loss = loss_fct([outputs, embs], None)
-        elif model.objective == "contrastive":
+        elif objective == "contrastive":
             loss_fct = OnlineContrastiveLoss()
             loss = loss_fct([outputs, embs], labels.float())
         else:
