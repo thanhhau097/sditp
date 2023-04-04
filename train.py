@@ -146,7 +146,7 @@ def main():
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         data_collator=collate_fn,
-        compute_metrics=compute_metrics,
+        # compute_metrics=compute_metrics,
     )
 
     if model_args.objective == "contrastive":

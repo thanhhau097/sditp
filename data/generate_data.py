@@ -61,6 +61,8 @@ def generate(args):
                 image = model(prompt, num_inference_steps=20).images[0]
                 # save image to image_folder
                 image.save(image_path)
+            else:
+                print(f"Image {image_path} already exists")
             image_paths.append(image_path)
 
         return image_paths
