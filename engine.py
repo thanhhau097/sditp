@@ -145,10 +145,10 @@ class CustomTrainer(Trainer):
 
         embs = inputs.get("embs")
         labels = inputs.get("labels")
-        # try:
-        objective = model.module.objective
-        # except:
-        #     objective = model.objective
+        try:
+            objective = model.module.objective
+        except:
+            objective = model.objective
         if objective == "cosine":
             loss_fct = CosineEmbeddingLoss()
             labels = (labels * 2) - 1
