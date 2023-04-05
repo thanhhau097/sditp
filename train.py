@@ -66,13 +66,18 @@ def main():
 
     # Load data
     print("Reading pairs data...")
-    pairs_df = pd.read_csv(data_args.pairs_path)
+    pairs_df = pd.concat([pd.read_csv(f"{data_args.pairs_path[:-4]}_{i}.csv") for i in range(0, 250000, 250000)])
+    # pairs_df = pd.read_csv(data_args.pairs_path)
     print("Reading prompt data...")
-    prompt_df = pd.read_csv(data_args.prompt_path)
+    # prompt_df = pd.read_csv(data_args.prompt_path)
+    prompt_df = pd.concat([pd.read_csv(f"{data_args.prompt_path[:-4]}_{i}.csv") for i in range(0, 250000, 250000)])
     print("Reading image data...")
-    image_df = pd.read_csv(data_args.image_path)
+    # image_df = pd.read_csv(data_args.image_path)
+    image_df = pd.concat([pd.read_csv(f"{data_args.image_path[:-4]}_{i}.csv") for i in range(0, 250000, 250000)])
     print("Reading correlation data...")
-    correlation_df = pd.read_csv(data_args.correlation_path)
+    # correlation_df = pd.read_csv(data_args.correlation_path)
+    correlation_df = pd.concat([pd.read_csv(f"{data_args.correlation_path[:-4]}_{i}.csv") for i in range(0, 250000, 250000)])
+
 
     # split train and val pairs_df from correlation_df, we get prompt_id of fold from correlation_df and mapping to pairs_df
     print("Splitting train and val pairs...")
@@ -118,6 +123,14 @@ def main():
             freeze_backbone=False,
         )
 
+    # Freeze partial layers
+    freeze_layers = ['backbone.stem.', 'backbone.stages.0.', 'backbone.stages.1.']
+    for name, param in model.named_parameters():
+        for layer in freeze_layers:
+            if layer in name:
+                param.requires_grad = False
+            print(name)
+
     if last_checkpoint is None and model_args.resume is not None:
         logger.info(f"Loading {model_args.resume} ...")
         checkpoint = torch.load(model_args.resume, "cpu")
@@ -141,7 +154,7 @@ def main():
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         data_collator=collate_fn,
-        compute_metrics=compute_metrics,
+        # compute_metrics=compute_metrics,
     )
 
     if model_args.objective == "contrastive":

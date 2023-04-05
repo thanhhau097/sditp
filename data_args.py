@@ -8,16 +8,16 @@ class DataArguments:
     """
 
     pairs_path: str = field(
-        default="./data/pairs.csv", metadata={"help": "path to pairs csv file"}
+        default="./data/generated_data/pairs.csv", metadata={"help": "path to pairs csv file"}
     )
     prompt_path: str = field(
-        default="./data/prompt.csv", metadata={"help": "path to prompt csv file"}
+        default="./data/generated_data/prompt.csv", metadata={"help": "path to prompt csv file"}
     )
     image_path: str = field(
-        default="./data/image.csv", metadata={"help": "path to image csv file"}
+        default="./data/generated_data/image.csv", metadata={"help": "path to image csv file"}
     )
     correlation_path: str = field(
-        default="./data/correlation.csv",
+        default="./data/generated_data/correlation.csv",
         metadata={"help": "correlation between prompt and images"},
     )
     image_folder: str = field(

@@ -5,7 +5,7 @@ import os
 
 import cupy as cp
 from cuml.neighbors import NearestNeighbors
-import cv2
+from PIL import Image
 import pandas as pd
 import torch
 import torch.nn.functional as F
@@ -14,6 +14,7 @@ from tqdm import tqdm
 from transformers import TrainerCallback
 
 from utils import get_pos_score, f2_score
+import torchvision.transforms as transforms
 
 
 class SDITPDataset(Dataset):
@@ -45,6 +46,42 @@ class SDITPDataset(Dataset):
         )
 
         self.image_paths, self.prompt_embs, self.labels = self.preprocess_df()
+        
+        # Agumentation
+        # Define your augmentation strength and the number of transformations to apply
+        augment_strength = 5
+        n_transforms = 2
+
+        # Define the random augmentation transform
+        augment_transform = transforms.Compose([    
+            transforms.RandomHorizontalFlip(p=0.5),    
+            transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),    
+            transforms.RandomApply([transforms.GaussianBlur(kernel_size=3)], p=0.1),
+            transforms.RandomApply([transforms.RandomRotation(degrees=15)], p=0.5),
+            transforms.RandomResizedCrop(size=512, scale=(0.7, 1.0), ratio=(0.8, 1.2))
+        ])
+
+        # Define the normalization transform
+        normalize_transform = transforms.Normalize(
+            mean=[0.0],
+            std=[1.0]
+        )
+
+        # Define the composed transform with random augmentation and normalization
+        train_transform = transforms.Compose([    
+            transforms.RandomApply([augment_transform], p=0.5),
+            transforms.RandomApply([transforms.RandAugment(2, augment_strength)], p=0.5),
+            transforms.RandomApply([augment_transform], p=0.5),
+            transforms.RandomApply([transforms.RandAugment(n_transforms, augment_strength)], p=0.5),
+            transforms.ToTensor(),
+            normalize_transform
+        ])
+
+        val_transform = transforms.Compose([
+            transforms.ToTensor(),
+            normalize_transform
+        ])
+        self.transform = train_transform if self.is_train else val_transform
 
     def preprocess_df(self):
         # get image path from self.image_id_to_path_dict and pairs
@@ -69,9 +106,12 @@ class SDITPDataset(Dataset):
 
     def __getitem__(self, idx):
         image_path = self.image_paths[idx]
-        image = cv2.imread(image_path)
-        image = cv2.resize(image, self.size)
-        image = image.transpose(2, 0, 1) / 255
+        # image = cv2.imread(image_path)
+        # image = cv2.resize(image, self.size)
+        # image = image.transpose(2, 0, 1) / 255
+
+        image = Image.open(image_path)
+        image = self.transform(image)
 
         emb = self.prompt_embs[idx]
         try:
@@ -86,7 +126,7 @@ class SDITPDataset(Dataset):
 
         label = self.labels[idx]
         return (
-            torch.tensor(image).float(),
+            image,
             torch.tensor(emb).float(),
             torch.tensor(int(label)).float(),
         )
@@ -109,8 +149,9 @@ class InferenceDataset(Dataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        image = cv2.imread(self.image_paths[idx])
-        image = cv2.resize(image, self.size)
+        # image = cv2.imread(self.image_paths[idx])
+        # image = cv2.resize(image, self.size)
+        image = Image.open(self.image_paths[idx])
         image = image.transpose(2, 0, 1) / 255
         return torch.tensor(image).float()
 

@@ -9,7 +9,7 @@ def run_generate_data(i, sentence_transformers_weights_path):
     num_images_per_process = 250000
     num_images_per_prompt = 1
     subprocess.run(
-        f"CUDA_VISIBLE_DEVICES={i} python generate_data.py --start {i * num_images_per_process} --end {(i + 1) * num_images_per_process} --n_images_per_prompt {num_images_per_prompt} --sentence_transformers_weights_path {sentence_transformers_weights_path}",
+        f"CUDA_VISIBLE_DEVICES={i - 8} python generate_data.py --start {i * num_images_per_process} --end {(i + 1) * num_images_per_process} --n_images_per_prompt {num_images_per_prompt} --sentence_transformers_weights_path {sentence_transformers_weights_path}",
         shell=True,
     )
 
@@ -17,12 +17,12 @@ def run_generate_data(i, sentence_transformers_weights_path):
 if __name__ == "__main__":
     num_processes = 8
     sentence_transformers_weights_path = (
-        "/home/thanh/shared_disk/thanh/sditp/data/all-MiniLM-L6-v2"
+        "/home/phamhoan/sditp/data/all-MiniLM-L6-v2"
     )
     with multiprocessing.Pool(num_processes) as p:
         p.starmap(
             run_generate_data,
-            [(i, sentence_transformers_weights_path) for i in range(num_processes)],
+            [(i, sentence_transformers_weights_path) for i in range(8, num_processes + 8)],
         )
 
 # huggingface-cli login

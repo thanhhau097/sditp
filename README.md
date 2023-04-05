@@ -21,6 +21,10 @@ Cosine:
 CUDA_VISIBLE_DEVICES=1 python train.py --evaluation_strategy epoch --save_strategy epoch --save_total_limit 5 --logging_strategy steps --logging_steps 50 --fp16 --warmup_ratio 0.01 --lr_scheduler_type cosine --adam_eps 1e-6 --optim adamw_torch --do_train --do_eval --metric_for_best_model eval_loss --model_name resnet50 --fold 0 --dataloader_num_workers 32 --learning_rate 1e-4 --num_train_epochs 30 --per_device_train_batch_size 64 --per_device_eval_batch_size 64 --remove_unused_columns False --overwrite_output_dir --load_best_model_at_end --objective cosine --output_dir ./outputs_resnet50/
 ```
 
+```bash
+python -m torch.distributed.launch --use_env --nproc_per_node=8 train.py --evaluation_strategy epoch --save_strategy epoch --save_total_limit 5 --logging_strategy steps --logging_steps 50 --fp16 --warmup_ratio 0.01 --lr_scheduler_type cosine --adam_eps 1e-6 --optim adamw_torch --do_train --do_eval --metric_for_best_model eval_loss --model_name convnext_tiny --fold 0 --dataloader_num_workers 24 --learning_rate 1e-4 --num_train_epochs 20 --per_device_train_batch_size 96 --per_device_eval_batch_size 96 --remove_unused_columns False --overwrite_output_dir --load_best_model_at_end --objective cosine --output_dir ./outputs_ctiny/ --image_folder /data/hoanganh/
+```
+
 Contrastive:
 
 ```
